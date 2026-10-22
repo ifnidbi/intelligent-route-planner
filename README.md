@@ -7,7 +7,7 @@ Group 4 Course Project
 
 We are developing a route-planning agent for a simulated campus environment. The project will compare how different search algorithms find routes and balance route cost against computational effort.
 
-**Status:** UCS, Greedy and A* working with a text interface, some basic tests and a first experiment runner.
+**Status:** UCS, Greedy and A* working with a simple window and a text interface, some basic tests and a first experiment runner.
 
 ## Planned Algorithms
 
@@ -55,7 +55,8 @@ Experiments will include simple maps with known answers, difficult layouts, and 
 Needs Python 3.10 or newer. No extra packages are needed. Run everything from the project folder.
 
 ```
-python3 main.py                              # pick a map, start, goal and algorithm
+python3 -m visualization.gui                 # window version (dropdowns + grid animation)
+python3 main.py                              # text version
 python3 -m unittest discover -v tests        # run the tests
 python3 -m experiments.run_experiments       # 10 maps per condition (default)
 python3 -m experiments.run_experiments 100   # 100 maps per condition

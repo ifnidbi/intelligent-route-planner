@@ -52,6 +52,7 @@ def search(grid, start, goal, algo):
     expanded_set = set()
     # expanded = nodes we take off the queue and look at (old duplicate entries dont count)
     expanded = 0
+    order = []  # for the gui animation
     path = None
 
     while frontier:
@@ -60,6 +61,7 @@ def search(grid, start, goal, algo):
             continue
         expanded_set.add(node)
         expanded += 1
+        order.append(node)
 
         if node == goal:
             path = make_path(parent, goal)
@@ -87,6 +89,7 @@ def search(grid, start, goal, algo):
         "cost": None,
         "expanded": expanded,
         "time": run_time,
+        "order": order,
     }
     if path is not None:
         result["cost"] = g[goal]
