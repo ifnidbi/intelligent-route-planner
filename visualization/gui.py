@@ -1,17 +1,50 @@
 import random
 import tkinter as tk
+from tkinter import ttk
 
 from environment.grid import make_grid, random_map, random_open_cell, WALL
 from environment.maps import MAPS
 from algorithms.search import search, ALGORITHMS
 
-BG = "#c0c0c0"
 CANVAS_SIZE = 600
 
 EXPANDED_COLOR = "#99ccff"
 PATH_COLOR = "#ff00ff"
 START_COLOR = "#00cc00"
 GOAL_COLOR = "red"
+
+INSTRUCTIONS = """How to use
+
+Pick your settings and press Run. Use the < and > buttons to go through the maps it made.
+
+Map: random makes new maps. The other ones are small maps we made by hand.
+
+Grid size: how many rows and columns the map has.
+
+Walls: how much of the map is blocked off.
+
+Max cell cost: normal cells cost 1 to walk into. Orange cells cost more and darker orange means more expensive. Think stairs or a crowded hallway.
+
+Start/Goal: random picks random spots. corners puts the start in the top left and the goal in the bottom right.
+
+Number of maps: how many maps to make.
+
+First seed: the seed decides what the map looks like. The same seed always gives the same map.
+
+Speed: how fast the animation plays.
+
+Show algorithm: which search you want to watch.
+
+Colors
+green = start
+red = goal
+black = wall
+blue = cells the search expanded
+pink = the route it found
+
+Left click a cell to move the start. Right click to move the goal.
+
+Expanded is how many cells the search had to check. Lower means less work. Cost is the total cost of the route."""
 
 
 def cell_color(ch):
@@ -28,17 +61,16 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title("Campus Route Planner")
-        root.configure(bg=BG)
 
         self.maps = []
         self.current = 0
         self.rects = {}
         self.anim_job = None
 
-        left = tk.Frame(root, bg=BG, relief="groove", bd=2, padx=8, pady=8)
-        left.pack(side="left", fill="y", padx=6, pady=6)
+        left = ttk.Frame(root, padding=10)
+        left.pack(side="left", fill="y")
 
-        tk.Label(left, text="SETTINGS", bg=BG, font=("Courier", 12, "bold")).pack(anchor="w")
+        ttk.Label(left, text="Settings").pack(anchor="w")
         self.map_var = self.dropdown(left, "Map", ["random"] + list(MAPS.keys()))
         self.size_var = self.dropdown(left, "Grid size", ["5", "10", "25", "50", "100"], "10")
         self.walls_var = self.dropdown(left, "Walls", ["0%", "10%", "20%", "30%", "40%"], "20%")
@@ -48,44 +80,40 @@ class App:
         self.seed_var = self.dropdown(left, "First seed", ["0", "100", "200", "300", "400", "500"])
         self.speed_var = self.dropdown(left, "Speed", ["instant", "fast", "slow"], "fast")
 
-        tk.Button(left, text="Run", width=12, command=self.run).pack(pady=8)
+        ttk.Button(left, text="Run", command=self.run).pack(anchor="w", pady=8)
 
-        tk.Label(left, text="VIEW", bg=BG, font=("Courier", 12, "bold")).pack(anchor="w", pady=(10, 0))
-        self.view_var = tk.StringVar(value="")
-        row = tk.Frame(left, bg=BG)
+        ttk.Label(left, text="View").pack(anchor="w", pady=(10, 0))
+        row = ttk.Frame(left)
         row.pack(anchor="w")
-        tk.Button(row, text="<", command=self.prev_map).pack(side="left")
-        self.map_menu = tk.OptionMenu(row, self.view_var, "")
-        self.map_menu.config(width=12)
-        self.map_menu.pack(side="left")
-        tk.Button(row, text=">", command=self.next_map).pack(side="left")
+        ttk.Button(row, text="<", width=2, command=self.prev_map).pack(side="left")
+        self.view_box = ttk.Combobox(row, state="readonly", width=10)
+        self.view_box.bind("<<ComboboxSelected>>", lambda e: self.show_map(self.view_box.current()))
+        self.view_box.pack(side="left")
+        ttk.Button(row, text=">", width=2, command=self.next_map).pack(side="left")
 
         self.algo_var = self.dropdown(left, "Show algorithm", ALGORITHMS, "astar", self.draw)
-        tk.Button(left, text="Replay", width=12, command=self.draw).pack(pady=8)
+        ttk.Button(left, text="Replay", command=self.draw).pack(anchor="w", pady=8)
 
-        self.info = tk.Label(left, text="press Run", bg=BG, font=("Courier", 11), justify="left")
+        self.info = ttk.Label(left, text="press Run", font="TkFixedFont", justify="left")
         self.info.pack(anchor="w", pady=6)
 
-        tk.Label(left, bg=BG, justify="left", font=("Courier", 10),
-                 text="green = start\nred = goal\nblack = wall\norange = costs more\n"
-                      "blue = expanded\npink = route\n\nleft click = move start\nright click = move goal").pack(anchor="w")
-
-        self.canvas = tk.Canvas(root, width=CANVAS_SIZE, height=CANVAS_SIZE, bg="white",
-                                relief="sunken", bd=2, highlightthickness=0)
-        self.canvas.pack(side="left", padx=6, pady=6)
+        self.canvas = tk.Canvas(root, width=CANVAS_SIZE + 4, height=CANVAS_SIZE + 4, bg="white")
+        self.canvas.pack(side="left", padx=10, pady=10)
         self.canvas.bind("<Button-1>", self.set_start)
         self.canvas.bind("<Button-2>", self.set_goal)
         self.canvas.bind("<Button-3>", self.set_goal)
 
+        right = ttk.Frame(root, padding=10)
+        right.pack(side="left", fill="y")
+        ttk.Label(right, text=INSTRUCTIONS, wraplength=260, justify="left").pack(anchor="nw")
+
     def dropdown(self, parent, label, options, default=None, command=None):
-        tk.Label(parent, text=label, bg=BG).pack(anchor="w")
+        ttk.Label(parent, text=label).pack(anchor="w")
         var = tk.StringVar(value=default or options[0])
+        box = ttk.Combobox(parent, textvariable=var, values=options, state="readonly", width=12)
         if command:
-            menu = tk.OptionMenu(parent, var, *options, command=lambda x: command())
-        else:
-            menu = tk.OptionMenu(parent, var, *options)
-        menu.config(width=12)
-        menu.pack(anchor="w")
+            box.bind("<<ComboboxSelected>>", lambda e: command())
+        box.pack(anchor="w")
         return var
 
     def run(self):
@@ -120,10 +148,7 @@ class App:
         for m in self.maps:
             self.solve(m)
 
-        menu = self.map_menu["menu"]
-        menu.delete(0, "end")
-        for i in range(len(self.maps)):
-            menu.add_command(label=self.maps[i]["name"], command=lambda i=i: self.show_map(i))
+        self.view_box["values"] = [m["name"] for m in self.maps]
         self.show_map(0)
 
     def solve(self, m):
@@ -135,7 +160,7 @@ class App:
         if len(self.maps) == 0:
             return
         self.current = i % len(self.maps)
-        self.view_var.set(self.maps[self.current]["name"])
+        self.view_box.current(self.current)
         self.draw()
 
     def prev_map(self):

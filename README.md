@@ -55,7 +55,7 @@ Experiments will include simple maps with known answers, difficult layouts, and 
 Needs Python 3.10 or newer. No extra packages are needed. Run everything from the project folder.
 
 ```
-python3 -m visualization.gui                 # window version (dropdowns + grid animation)
+python3 -m visualization.gui                 # window version (dropdowns, grid animation, instructions)
 python3 main.py                              # text version
 python3 -m unittest discover -v tests        # run the tests
 python3 -m experiments.run_experiments       # 10 maps per condition (default)
