@@ -7,7 +7,7 @@ Group 4 Course Project
 
 We are developing a route-planning agent for a simulated campus environment. The project will compare how different search algorithms find routes and balance route cost against computational effort.
 
-**Status:** Planning and initial setup.
+**Status:** UCS, Greedy and A* working with a text interface, some basic tests and a first experiment runner.
 
 ## Planned Algorithms
 
@@ -52,7 +52,21 @@ Experiments will include simple maps with known answers, difficult layouts, and 
 
 ## Setup and Running
 
-Setup instructions will be added when the language, dependencies, and entry point are confirmed.
+Needs Python 3.10 or newer. No extra packages are needed. Run everything from the project folder.
+
+```
+python3 main.py                              # pick a map, start, goal and algorithm
+python3 -m unittest discover -v tests        # run the tests
+python3 -m experiments.run_experiments       # 10 maps per condition (default)
+python3 -m experiments.run_experiments 100   # 100 maps per condition
+```
+
+Map symbols: `.` normal cell (cost 1), `2`-`9` slower cells (stairs or crowded areas), `#` wall, and in the output `S` start, `G` goal, `*` route.
+Positions are `(row, col)` starting from `(0, 0)` at the top left. Moving into a cell costs that cell's cost, and the start cell is free.
+The heuristic is Manhattan distance × 1 (the cheapest move), so it never overestimates.
+"Nodes expanded" counts each cell taken off the queue and expanded (duplicate queue entries are skipped and not counted).
+
+Experiment results are saved to `experiments/results.csv`.
 
 ## Team
 
@@ -62,7 +76,8 @@ Setup instructions will be added when the language, dependencies, and entry poin
 - Nadia
 - Yumna
 
-Implementation responsibilities will be agreed upon by the team.
+Algorithms, interface and code: Ates, Daphne, Sam  
+Testing: Nadia, Yumna
 
 ## Working Together
 
