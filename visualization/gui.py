@@ -2,8 +2,7 @@ import random
 import tkinter as tk
 from tkinter import ttk
 
-from environment.grid import make_grid, random_map, random_open_cell, WALL
-from environment.maps import MAPS
+from environment.grid import random_map, random_open_cell, WALL
 from algorithms.search import search, ALGORITHMS
 
 CANVAS_SIZE = 600
@@ -17,8 +16,6 @@ INSTRUCTIONS = """How to use
 
 Pick your settings and press Run. Use the < and > buttons to go through the maps it made.
 
-Map: random makes new maps. The other ones are small maps we made by hand.
-
 Grid size: how many rows and columns the map has.
 
 Walls: how much of the map is blocked off.
@@ -29,7 +26,7 @@ Start/Goal: random picks random spots. corners puts the start in the top left an
 
 Number of maps: how many maps to make.
 
-First seed: the seed decides what the map looks like. The same seed always gives the same map.
+Start from seed: type in a number. The seed decides what the map looks like and the same seed always gives the same map. If you make 5 maps starting from seed 10 you get seeds 10 to 14.
 
 Speed: how fast the animation plays.
 
@@ -71,13 +68,14 @@ class App:
         left.pack(side="left", fill="y")
 
         ttk.Label(left, text="Settings").pack(anchor="w")
-        self.map_var = self.dropdown(left, "Map", ["random"] + list(MAPS.keys()))
         self.size_var = self.dropdown(left, "Grid size", ["5", "10", "25", "50", "100"], "10")
         self.walls_var = self.dropdown(left, "Walls", ["0%", "10%", "20%", "30%", "40%"], "20%")
         self.cost_var = self.dropdown(left, "Max cell cost", ["1", "3", "5", "9"], "5")
         self.ends_var = self.dropdown(left, "Start/Goal", ["random", "corners"])
         self.count_var = self.dropdown(left, "Number of maps", ["1", "5", "10", "20"], "10")
-        self.seed_var = self.dropdown(left, "First seed", ["0", "100", "200", "300", "400", "500"])
+        ttk.Label(left, text="Start from seed").pack(anchor="w")
+        self.seed_var = tk.StringVar(value="0")
+        ttk.Entry(left, textvariable=self.seed_var, width=14).pack(anchor="w")
         self.speed_var = self.dropdown(left, "Speed", ["instant", "fast", "slow"], "fast")
 
         ttk.Button(left, text="Run", command=self.run).pack(anchor="w", pady=8)
@@ -117,33 +115,32 @@ class App:
         return var
 
     def run(self):
-        self.maps = []
-        name = self.map_var.get()
+        seed_text = self.seed_var.get().strip()
+        if not seed_text.isdigit():
+            self.info.config(text="seed has to be a number")
+            return
+        first_seed = int(seed_text)
 
-        if name != "random":
-            m = MAPS[name]
-            self.maps.append({"name": name, "grid": make_grid(m["grid"]), "start": m["start"], "goal": m["goal"]})
-        else:
-            size = int(self.size_var.get())
-            walls = int(self.walls_var.get().strip("%")) / 100
-            max_cost = int(self.cost_var.get())
-            first_seed = int(self.seed_var.get())
-            for i in range(int(self.count_var.get())):
-                seed = first_seed + i
-                grid = random_map(size, size, walls, seed, max_cost)
-                if self.ends_var.get() == "random":
-                    rng = random.Random(seed)
-                    start = random_open_cell(grid, rng)
-                    goal = random_open_cell(grid, rng)
-                    if start is None:
-                        continue
-                else:
-                    start = (0, 0)
-                    goal = (size - 1, size - 1)
-                    # make sure the corners arent walls
-                    grid[0][0] = "."
-                    grid[size - 1][size - 1] = "."
-                self.maps.append({"name": f"seed {seed}", "grid": grid, "start": start, "goal": goal})
+        self.maps = []
+        size = int(self.size_var.get())
+        walls = int(self.walls_var.get().strip("%")) / 100
+        max_cost = int(self.cost_var.get())
+        for i in range(int(self.count_var.get())):
+            seed = first_seed + i
+            grid = random_map(size, size, walls, seed, max_cost)
+            if self.ends_var.get() == "random":
+                rng = random.Random(seed)
+                start = random_open_cell(grid, rng)
+                goal = random_open_cell(grid, rng)
+                if start is None:
+                    continue
+            else:
+                start = (0, 0)
+                goal = (size - 1, size - 1)
+                # make sure the corners arent walls
+                grid[0][0] = "."
+                grid[size - 1][size - 1] = "."
+            self.maps.append({"name": f"seed {seed}", "grid": grid, "start": start, "goal": goal})
 
         for m in self.maps:
             self.solve(m)
