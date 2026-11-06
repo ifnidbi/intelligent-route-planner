@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# experiment output (rerun to make it again)
+experiments/results.csv
